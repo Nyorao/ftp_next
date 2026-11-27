@@ -4,7 +4,7 @@
 
 ## 1. 先说缺陷和前提
 
-1. **仓库里没有“前后片 KV-pos”的旧实现或结果。** 本次的前后片分支是按“前后片也走 KV-pos”新写的，可能与之前测过的版本不同，所以加了单独的 NB-pos 组，联合结果只和本仓库同一实现的单分支比较。
+1. **这里的“前后片”是额外的 KV-pos 分支，不是 A 的三片融合。** 之前测过的前后片是 A 组的三片 CRF（`slice_context: adaptive`），原 KV-pos 已经建在 A 上，所以“A 的前后片 + 中部片 KV-pos”就是已有的 KV-pos 组。本轮三组都保留 A 的三片 CRF；NB-pos 在 CRF 之外让 i−1、i+1 再走一次 KV-pos，JOINT-pos 是 KV-pos 再加这一分支。因此本轮回答的是“前后片额外走 KV-pos 有没有增益”：看 NB-pos − A 和 JOINT-pos − KV-pos。仓库里没有这种分支的旧实现或结果。“单片 + 中部片 KV-pos”这一格不存在（配置校验禁止），本轮也不补。
 2. **仓库里看不到 KV-pos 的提升数字。** 旧 README 写 v2“只做了实验准备，尚未正式训练”（`docs/reference_conditioning_20261125.md` 只说脚本默认不启动训练）；但 `experiments/diagnose_kv_position_followup.py` 的说明是“three completed KV-pos checkpoints”，并按 seed42/43/44 读取第 6000 步 `KV-pos/last.pt`，说明写这个脚本时三种子 KV-pos 已训练完成。结果在 `outputs/`（不在仓库），提升幅度这里无法核对。
 3. **病例参考片不是固定的中间索引片。** 沿用 KV-pos 原规则：训练时从“冻结 A 预测前景面积 > 0 且 ≥ 本病例最大值 10%”的片中均匀随机抽（尽量排除目标片），推理时取冻结 A 预测椎管面积最大的片，并列取靠近中点者。这与 B 组的 `floor((N-1)/2)` 不同。
 4. **位置键的数学后果（已用代码和测试核对）。** KV-pos 的 key 只含 SI 位置编码，注意力 logit 只取决于查询内容和 SI 坐标差，同一 SI 高度上所有 AP 位置的权重相同。所以它实际是“按 SI 高度汇总参考片掩膜特征”，不是逐像素对应。前后两片的 key 完全相同，放进同一个 softmax 后两片权重相等，前后片分支**等价于两片 V 的注意力加权平均**；交换两片输出不变（`test_absent_slots_patients_and_slot_order`）。

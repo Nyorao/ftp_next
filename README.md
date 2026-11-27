@@ -15,7 +15,7 @@
 | N7 编码器文本路由 | 已实现。200 轮配对实验**未通过**预设的双指标条件 | 见下文“实验结论” |
 | 病例上下文 B/C | 已实现。B 在三种子配对中**低于**对照 A | [病例参考片补充实验](docs/case_reference_followup_20261116.md) |
 | 参考图像—掩膜条件 v2 | 2026-11-25 实现。实施说明写“只做了实验准备”，但 [`diagnose_kv_position_followup.py`](experiments/diagnose_kv_position_followup.py) 针对的是 seed42/43/44 三个已训练完成的 KV-pos 检查点；结果在 `outputs/`，仓库内无法核对 | [实施说明](docs/reference_conditioning_20261125.md) |
-| 前后片 + 病例参考片 KV-pos 联合 | 2026-11-27 实现，**尚未训练**；含仅前后片、KV-pos 重跑两个对照 | [联合实验说明](docs/reference_joint_20261127.md) |
+| 前后片额外 KV-pos 分支 + 病例参考片 KV-pos | 2026-11-27 实现，**尚未训练**；三组都含 A 的三片 CRF，对照为 KV-pos 重跑与仅前后片分支 | [联合实验说明](docs/reference_joint_20261127.md) |
 
 **实验结论（来自开发验证集，不是 test 结果）：**
 
