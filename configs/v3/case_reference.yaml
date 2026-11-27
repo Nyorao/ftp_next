@@ -1,6 +1,6 @@
 # A/B/C preparation only by default; run_case_reference freezes all arms.
 schema_version: 3
-root_path: /data/zhp/dateset_spine copy/spider/slice_png_order
+root_path: ${SPIDER_PNG_ROOT:-/data/zhp/dateset_spine copy/spider/slice_png_order}
 output_dir: outputs/case_reference_20261112
 method: mean_teacher
 num_classes: 20
@@ -38,4 +38,4 @@ max_seconds: 14400
 slice_context: adaptive
 case_reference: none
 context_position: none
-context_geometry_manifest: /home/zhp/ftp_next/data/spider_image_geometry_manifest.json
+context_geometry_manifest: ${REPO_ROOT}/data/spider_image_geometry_manifest.json

@@ -1,19 +1,19 @@
 # Preparation/cache generation is required before training this arm.
-root_path: /data/zhp/dateset_spine copy/spider/slice_png_order
-output_dir: /home/zhp/ftp_next/outputs/reference_conditioning_20261125/training/seed42/KV-GT
+root_path: ${SPIDER_PNG_ROOT:-/data/zhp/dateset_spine copy/spider/slice_png_order}
+output_dir: ${REPO_ROOT}/outputs/reference_conditioning_20261125/training/seed42/KV-GT
 schema_version: 3
 method: mean_teacher
 slice_context: adaptive
 case_reference: none
 context_position: none
-context_geometry_manifest: /home/zhp/ftp_next/data/spider_image_geometry_manifest.json
+context_geometry_manifest: ${REPO_ROOT}/data/spider_image_geometry_manifest.json
 reference_condition: kv
 reference_sampling: random
 reference_gt: true
 reference_cycle_weight: 0.0
-reference_teacher: /home/zhp/ftp_next/outputs/case_reference_20261112/screen/A/last.pt
+reference_teacher: ${REPO_ROOT}/outputs/case_reference_20261112/screen/A/last.pt
 reference_teacher_sha256: 97b32618832b0f0a23e63298b8fedbd3725755a2d324106c87f14a4dccd8ceb6
-reference_cache: /home/zhp/ftp_next/outputs/reference_conditioning_20261125/cache/seed42
+reference_cache: ${REPO_ROOT}/outputs/reference_conditioning_20261125/cache/seed42
 reference_windows:
 - 2
 - 1

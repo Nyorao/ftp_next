@@ -1,6 +1,6 @@
 # Matched internal-text screen: CRF4 -> text adapter -> D3.
 schema_version: 3
-root_path: /data/zhp/dateset_spine copy/spider/slice_png_order
+root_path: ${SPIDER_PNG_ROOT:-/data/zhp/dateset_spine copy/spider/slice_png_order}
 output_dir: outputs/internal_text_screen_20261106/runs/text
 method: mean_teacher
 num_classes: 20

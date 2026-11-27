@@ -1,6 +1,6 @@
 # Three NEW dual auxiliary arms; reuse completed baselines, no test selection.
 schema_version: 3
-root_path: /data/zhp/dateset_spine copy/spider/slice_png_order
+root_path: ${SPIDER_PNG_ROOT:-/data/zhp/dateset_spine copy/spider/slice_png_order}
 output_dir: outputs/freqssl_v3_auxiliary
 method: dual_frequency
 num_classes: 20

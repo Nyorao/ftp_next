@@ -4,7 +4,7 @@
 
 输出标签：`0` 背景，`1–9` 椎体，`10` 椎管，`11–19` 椎间盘。椎体和椎间盘使用数据集的相对编号。文本分支只使用背景、椎体、椎管、椎间盘四类组织语义，具体编号由 20 类分割头学习。
 
-> 本 README 于 2026-11-27 根据仓库代码重写。旧版中失效的行号锚点、指向未提交目录的链接和不准确的依赖说明已经修正，详见[已知问题](#已知问题)。
+> 本 README 于 2026-11-27 根据仓库代码重写，修正了旧版中失效的行号锚点、指向未提交目录的链接和不准确的依赖说明。同日还把写死的本机路径改成了可以用环境变量覆盖，删除了重复提交的源码 zip，补全了依赖清单，并增加了 CPU 测试的 CI。
 
 ## 当前状态
 
@@ -27,11 +27,32 @@
 
 使用或继续开发前请先看这一节。
 
-1. **硬编码的本机路径。** 共有 44 处 `.py`/`.yaml` 写死了 `/home/zhp/...` 或 `/data/zhp/...`，例如各配置的 `root_path` 和 `context_geometry_manifest`。换机器需要逐个修改或在命令行覆盖。可用 `grep -rn "/home/zhp\|/data/zhp" configs experiments model` 定位。
-2. **缺少几何清单。** `case_reference.yaml`、参考条件配置和旧图像推理会用到 `data/spider_image_geometry_manifest.json`，但 `data/` 目录不在仓库中。相对位置 C、参考条件 v2 以及头信息有误的历史影像的推理都离不开它。
-3. **仓库里提交了源码压缩包。** `ftp_next-source-20261127.zip`（5.3 MB）的内容与仓库现有文件完全相同（已逐文件比对）。建议删掉，否则会一直占用 git 历史体积。
-4. **依赖清单不完整。** `requirements.txt` 中没有 `matplotlib`（`tests/test_freqssl_inference.py` 和 `figures/` 下的作图脚本需要），也没有 `open_clip_torch`（重新导出 BiomedCLIP 文本资产时需要）。`transformers` 只在历史 FTP v2 的 `model/prompts.py` 中使用。
-5. **没有 CI。** 测试只能本地运行，详见[测试](#测试)。
+1. **缺少几何清单。** 相对位置 C、参考条件 v2，以及头信息有误的历史影像的推理，都要用到 `data/spider_image_geometry_manifest.json`，但 `data/` 目录不在仓库中。在集群上需要另外拷贝这个文件，或用 `experiments/prepare_geometry_manifest.py` 重新生成。
+2. **实验结果不在仓库中。** `outputs/` 被 `.gitignore` 排除，所以下文的实验数字和参考条件 v2 依赖的冻结 A 教师（`outputs/case_reference_20261112/screen/A/last.pt`）都需要另外同步。
+3. **CI 只覆盖 CPU。** 标着 “CUDA required” 的测试在 CI 中会跳过，正式实验前仍需在 GPU 上跑一遍 `pytest tests`。
+
+## 路径配置（换机器或上集群）
+
+配置文件中的路径支持 `${变量}` 和 `${变量:-默认值}` 两种写法，由 [`freqssl/paths.py`](freqssl/paths.py) 在读取配置时展开。没有设置环境变量时，展开结果与原来写死的路径完全相同，所以原机器上什么都不用改。
+
+| 环境变量 | 作用 | 未设置时的值 |
+| --- | --- | --- |
+| `SPIDER_PNG_ROOT` | 所有配置的 `root_path`（SPIDER PNG 根目录） | `/data/zhp/dateset_spine copy/spider/slice_png_order` |
+| `REPO_ROOT` | 仓库内的 `data/`、`outputs/` 路径（几何清单、冻结教师、缓存） | 当前代码所在的仓库目录（自动获得） |
+| `FTP_NET_ROOT` | 历史 FTP v2 的 BERT 和文本嵌入，以及 `tests/test_mean_teacher.py` 对照用的原始 FTP 源码 | `/home/zhp/ftp_net` |
+| `TEACHER_PYTHON`、`STUDENT_PYTHON` | `run_prompt_context.py` / `run_prompt_revision.py` 中两个进程使用的解释器 | 原来的 conda 环境路径 |
+
+在集群上一般只需要设置：
+
+```bash
+export SPIDER_PNG_ROOT=/cluster/path/to/slice_png_order
+```
+
+说明：
+
+- 引用了未设置、又没有默认值的变量时会直接报错，不会悄悄变成空字符串。
+- 检查点里保存的是展开后的路径，`--resume` 和 `evaluate.py` 读到的仍是训练时的值。评估时如果换了数据位置，可以用 `evaluate.py --root-path` 覆盖。
+- `configs/frequency_three/plan.json` 是历史运行记录，里面的路径没有改。
 
 ## 目录结构
 
@@ -52,9 +73,9 @@ trainer.py, dataset.py, model/, config.py, losses.py   历史 FTP v2 兼容路�
 
 ## 环境与数据
 
-项目记录的环境是 Python 3.10、PyTorch 2.0.1。依赖见 [`requirements.txt`](requirements.txt)，另按需安装 `matplotlib` 和 `open_clip_torch`（见上文）。
+项目记录的环境是 Python 3.10、PyTorch 2.0.1。依赖见 [`requirements.txt`](requirements.txt)。只有在重新导出 BiomedCLIP 文本资产时，才需要另外安装 `open_clip_torch`。
 
-训练前把配置中的 `root_path` 指向 SPIDER PNG 根目录：
+训练前把 SPIDER PNG 根目录设为 `SPIDER_PNG_ROOT`（见[路径配置](#路径配置换机器或上集群)），目录结构如下：
 
 ```text
 <root_path>/<split>/image/SPIDER_<病例号>_<切片索引>_<总片数>.png
@@ -203,7 +224,14 @@ python -m pytest tests
 
 测试使用合成数据，不需要 SPIDER 数据。请用 pytest 运行：30 个测试文件中只有 13 个是 `unittest.TestCase`，`unittest discover` 会漏掉其余文件。
 
-2026-11-27 在无 GPU 环境（Python 3.13、PyTorch 2.15 CPU）下的结果是 223 个通过、24 个跳过、0 个失败。其中 22 个因为没有 CUDA 而跳过，2 个因为缺少原始 FTP 源码目录而跳过（`tests/test_mean_teacher.py`）。这个环境与项目记录的 Python 3.10 / PyTorch 2.0.1 不同。GPU 上的确定性、缓存和续训检查在这次运行中没有覆盖到。合成训练只能说明链路、梯度和恢复是正确的，不代表模型性能。
+2026-11-27 在无 GPU 的机器上用两套环境各跑了一遍，结果相同：228 个通过、24 个跳过、0 个失败。
+
+- 环境一：Python 3.10.20、PyTorch 2.0.1、NumPy 1.26，与项目记录的环境一致。
+- 环境二：Python 3.13、PyTorch 2.15、NumPy 2.5。
+
+跳过的 24 个里，22 个是因为没有 CUDA，2 个是因为缺少原始 FTP 源码（设置 `FTP_NET_ROOT` 后可以运行）。GPU 上的确定性、缓存和续训检查都没有覆盖到。合成训练只能说明链路、梯度和恢复是正确的，不代表模型性能。
+
+CI 配置在 [`.github/workflows/tests.yml`](.github/workflows/tests.yml)，push 到 main 或提交 PR 时会用 Python 3.10 + PyTorch 2.0.1 CPU 版运行上面的测试。
 
 ## 文档索引
 

@@ -1,11 +1,18 @@
-# Tested with the existing /home/zhp/.conda/envs/mamba environment (PyTorch 2.0.1).
+# Recorded training environment: Python 3.10, PyTorch 2.0.1 (conda env "mamba").
 torch>=2.0
 numpy
 Pillow
 PyYAML
-monai
 scipy
-transformers
 SimpleITK
-# Used to cross-check 3D metrics in tests against the original FTP evaluator.
+# Historical FTP v2 path only (dataset.py, trainer.py).
+monai
+# Historical FTP v2 prompt modules only (model/prompts.py).
+transformers
+# Tests: tests/test_spider_volume.py cross-checks 3D metrics with MedPy;
+# tests/test_freqssl_inference.py and figures/ scripts use matplotlib.
 MedPy
+matplotlib
+pytest
+# Not installed by default: open_clip_torch is needed only to re-export the
+# BiomedCLIP text assets (experiments/export_hierarchical_text_assets.py).

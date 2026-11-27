@@ -3,6 +3,12 @@ from pathlib import Path
 
 import yaml
 
+try:
+    from freqssl.paths import expand
+except ImportError:  # frozen legacy source snapshots do not copy freqssl/
+    def expand(value):
+        return value
+
 
 @dataclass
 class Config:
@@ -89,4 +95,4 @@ class Config:
 
 def load_config(path):
     with Path(path).open() as handle:
-        return Config(**yaml.safe_load(handle))
+        return Config(**expand(yaml.safe_load(handle)))

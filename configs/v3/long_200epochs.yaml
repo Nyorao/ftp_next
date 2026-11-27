@@ -1,6 +1,6 @@
 # 374 updates per labeled-pool epoch; one 200-epoch schedule with a 100-epoch snapshot.
 schema_version: 3
-root_path: /data/zhp/dateset_spine copy/spider/slice_png_order
+root_path: ${SPIDER_PNG_ROOT:-/data/zhp/dateset_spine copy/spider/slice_png_order}
 output_dir: outputs/freqssl_v3_long
 method: dual_frequency
 num_classes: 20

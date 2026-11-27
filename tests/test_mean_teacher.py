@@ -1,3 +1,4 @@
+import os
 import ast
 import copy
 import importlib.util
@@ -20,7 +21,7 @@ from trainer import binary_metrics, load_checkpoint_model, save_checkpoint, trai
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ORIGINAL = Path("/home/zhp/ftp_net")
+ORIGINAL = Path(os.environ.get("FTP_NET_ROOT", "/home/zhp/ftp_net"))
 
 
 def tiny_config():

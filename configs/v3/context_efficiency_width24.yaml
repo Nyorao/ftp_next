@@ -1,6 +1,6 @@
 # Paired capacity-only 6000-step screening; seed42, original labels and objectives.
 schema_version: 3
-root_path: /data/zhp/dateset_spine copy/spider/slice_png_order
+root_path: ${SPIDER_PNG_ROOT:-/data/zhp/dateset_spine copy/spider/slice_png_order}
 output_dir: outputs/context_efficiency_screen_20261106/width24
 method: mean_teacher
 num_classes: 20

@@ -1,7 +1,7 @@
 # OAR-Spine prototype: tissue/level factorization + ordinal ambiguity routing.
 # Fixed screening budget matches existing 6000-step controls. No test-driven selection.
 schema_version: 3
-root_path: /data/zhp/dateset_spine copy/spider/slice_png_order
+root_path: ${SPIDER_PNG_ROOT:-/data/zhp/dateset_spine copy/spider/slice_png_order}
 output_dir: outputs/spine_ordinal_screening
 method: dual_ordinal
 num_classes: 20
