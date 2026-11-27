@@ -397,6 +397,7 @@ def run_experiment(cfg, device, resume=None, stop_after=None):
             "image_exposures_per_center": 1 if cfg.slice_context == "none" else (4 if cfg.case_reference=='middle' else 3),
             "case_reference": cfg.case_reference, "context_position": cfg.context_position,
             "reference_condition": cfg.reference_condition,
+            "reference_sources": cfg.reference_sources,
             "reference_teacher": cfg.reference_teacher,
             "reference_sampling": cfg.reference_sampling,
             "reference_gt_curriculum": cfg.reference_gt,

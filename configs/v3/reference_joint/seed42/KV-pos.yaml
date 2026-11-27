@@ -1,0 +1,86 @@
+# Joint KV-pos study (docs/reference_joint_20261127.md), arm KV-pos: case reference only (original KV-pos, rerun on this cache).
+# Seed 42. Frozen A teacher of the same seed; build its cache first:
+#   python experiments/build_reference_cache.py --config <this file>
+root_path: ${SPIDER_PNG_ROOT:-/data/zhp/dateset_spine copy/spider/slice_png_order}
+output_dir: ${REPO_ROOT}/outputs/reference_joint_20261127/training/seed42/KV-pos
+schema_version: 3
+method: mean_teacher
+slice_context: adaptive
+case_reference: none
+context_position: none
+context_geometry_manifest: ${REPO_ROOT}/data/spider_image_geometry_manifest.json
+reference_condition: position
+reference_sampling: random
+reference_gt: false
+reference_cycle_weight: 0.0
+reference_teacher: ${REPO_ROOT}/outputs/case_reference_20261112/screen/A/last.pt
+reference_teacher_sha256: 97b32618832b0f0a23e63298b8fedbd3725755a2d324106c87f14a4dccd8ceb6
+reference_cache: ${REPO_ROOT}/outputs/reference_joint_20261127/cache/seed42
+reference_windows:
+- 2
+- 1
+reference_sources: case
+prompt_source: none
+prompt_cache: ''
+prompt_weight: 0.5
+prompt_route: legacy
+prompt_gate: ''
+internal_text: none
+text_bank: ''
+text_adapter_dim: 64
+text_fusion_layout: e4
+text_layer_mode: grouped
+text_feature_kind: none
+encoder_text_stage: null
+encoder_text_stages: []
+text_routing_mode: independent
+text_residual_mode: plain
+text_alignment_weight: 0.0
+text_alignment_balance: pixel
+training_split: ''
+checkpoint_every: 0
+num_classes: 20
+image_size: 224
+base_channels: 32
+max_channels: 256
+labelnum: 1496
+max_samples: 3732
+batch_size: 8
+labeled_bs: 4
+num_workers: 0
+seed: 42
+max_steps: 6000
+eval_every: 500
+log_every: 25
+base_lr: 0.0003
+weight_decay: 0.0001
+ema_decay: 0.99
+warmup_steps: 600
+ramp_steps: 1200
+unsupervised_weight: 1.0
+confidence: 0.8
+background_confidence: 0.95
+background_weight: 0.25
+pseudo_dice_weight: 0.0
+region_weight: 0.0
+region_grids:
+- 4
+- 8
+- 16
+ordinal_tissue_weight: 0.25
+ordinal_chain_threshold: 0.5
+ordinal_interval_mass: 0.8
+ordinal_max_interval: 3
+ordinal_bins: 56
+ordinal_use_chain: true
+ordinal_use_routing: true
+frequency_strength: 0.5
+noise_std: 0.08
+gain_std: 0.15
+cutmix_probability: 0.5
+grad_clip: 12.0
+amp: false
+deterministic: true
+cpu_threads: 4
+eval_batch_size: 8
+max_seconds: 43200  # safety stop only (resumable); joint arm costs more per step than KV-pos

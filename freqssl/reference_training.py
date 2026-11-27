@@ -6,6 +6,9 @@ from .objectives import segmentation_loss, masked_pseudo_loss, linear_ramp
 from .reference_conditioning import row_prior
 
 
+NEIGHBOR_INTENSITY_OFFSETS = (800000011, 1000000007)
+
+
 def gt_probability(step):
     return .5 * max(0., 1. - step / 3000.)
 
@@ -28,6 +31,10 @@ def train_reference_step(model, optimizer, batch, cfg, device, step):
     reference = {key: batch['reference_' + key].to(device) for key in ('image', 'probabilities', 'si', 'valid')}
     if cfg.reference_condition == 'row':
         reference['prior'] = batch['reference_prior'].to(device)
+    neighbors = getattr(cfg, 'reference_sources', 'case') in ('neighbors', 'case_neighbors')
+    if neighbors:
+        for key in ('neighbor_image', 'neighbor_probabilities', 'neighbor_valid'):
+            reference[key] = batch['reference_' + key].to(device)
     select = lambda values, mask: {k: v[mask] for k, v in values.items()}
     with torch.no_grad():
         target = model.teachers[0](image[~labeled], reference=select(reference, ~labeled)).softmax(1)
@@ -35,6 +42,12 @@ def train_reference_step(model, optimizer, batch, cfg, device, step):
     strong = strong_view(image, seed, cfg.noise_std, cfg.gain_std)
     condition = dict(reference)
     condition['image'] = strong_view(reference['image'], seed + 600000101, cfg.noise_std, cfg.gain_std)
+    if neighbors:
+        # One independent intensity stream per slot; offsets do not reuse any
+        # existing stream, so the target, case reference and CutMix are unchanged.
+        condition['neighbor_image'] = torch.cat([
+            strong_view(reference['neighbor_image'][:, j:j+1], seed + offset, cfg.noise_std, cfg.gain_std)
+            for j, offset in enumerate(NEIGHBOR_INTENSITY_OFFSETS)], 1)
     selected_gt = torch.zeros(len(image), dtype=torch.bool, device=device)
     if cfg.reference_gt:
         generator = torch.Generator().manual_seed(seed + 91349)
@@ -97,4 +110,8 @@ def train_reference_step(model, optimizer, batch, cfg, device, step):
     metrics.update({key + '_s1': value for key, value in coverage.items()})
     if cfg.reference_condition != 'row':
         metrics['reference_gates'] = [float(m.gate.detach().tanh()) for m in student.reference_adapters]
+    if neighbors:
+        metrics['reference_sources'] = cfg.reference_sources
+        metrics['reference_neighbor_gates'] = [float(m.gate.detach().tanh()) for m in student.neighbor_adapters]
+        metrics['reference_neighbor_slots'] = int(batch['reference_neighbor_present'].sum())
     return metrics
