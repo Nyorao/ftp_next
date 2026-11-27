@@ -196,7 +196,8 @@ class StudentTeacherSystem(nn.Module):
                 if getattr(cfg, 'reference_condition', 'none') != 'none':
                     from .reference_conditioning import ReferenceContextUNet
                     architecture = ReferenceContextUNet
-                    extra.update(reference_condition=cfg.reference_condition, reference_windows=cfg.reference_windows)
+                    extra.update(reference_condition=cfg.reference_condition, reference_windows=cfg.reference_windows,
+                                 reference_sources=getattr(cfg, 'reference_sources', 'case'))
                 if getattr(cfg, "internal_text", "none") != "none":
                     from .internal_text import TextContextUNet
                     architecture = TextContextUNet

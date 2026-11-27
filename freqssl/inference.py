@@ -122,7 +122,8 @@ def load_single_network(path, device, network=None):
     if cfg.reference_condition != 'none':
         from .reference_conditioning import ReferenceContextUNet
         architecture = ReferenceContextUNet
-        extra.update(reference_condition=cfg.reference_condition, reference_windows=cfg.reference_windows)
+        extra.update(reference_condition=cfg.reference_condition, reference_windows=cfg.reference_windows,
+                     reference_sources=cfg.reference_sources)
     if cfg.internal_text != "none":
         from .internal_text import TextContextUNet
         architecture = TextContextUNet
@@ -160,6 +161,7 @@ def load_single_network(path, device, network=None):
                         "backbones_loaded": 1, "method": cfg.method, "slice_context": cfg.slice_context,
                         "case_reference": cfg.case_reference, "context_position": cfg.context_position,
                         "reference_condition": cfg.reference_condition,
+                        "reference_sources": cfg.reference_sources,
                         "reference_teacher_required": cfg.reference_condition != 'none',
                         "internal_text": cfg.internal_text,
                         "text_encoder_loaded": False,
@@ -199,6 +201,8 @@ def predict_volume(model, array_zyx, plan, image_size, device, batch_size=8, ref
                     lambda index: probabilities[index], device, batch_size, stats=reference_stats)
                 model.reference_receipt = dict(source=source_receipt, target=reference_stats,
                     selection='maximum predicted canal area; middle-distance/index tie break',
+                    sources=getattr(model.backbone, 'reference_sources', 'case'),
+                    neighbor_slots='slices i-1 and i+1; absent slots have zero validity',
                     source_checkpoint=source, backbones_required=2)
                 from .reference_metrics import WorkCounter
                 import time

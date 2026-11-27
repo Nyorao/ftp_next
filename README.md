@@ -14,7 +14,8 @@
 | N0 三片邻片融合 | 已实现，是后续文本与病例上下文实验的对照组 | [上下文效率](docs/context_architecture_efficiency_20261106.md) |
 | N7 编码器文本路由 | 已实现。200 轮配对实验**未通过**预设的双指标条件 | 见下文“实验结论” |
 | 病例上下文 B/C | 已实现。B 在三种子配对中**低于**对照 A | [病例参考片补充实验](docs/case_reference_followup_20261116.md) |
-| 参考图像—掩膜条件 v2 | 2026-11-25 实现，**只做了实验准备，尚未正式训练** | [实施说明](docs/reference_conditioning_20261125.md) |
+| 参考图像—掩膜条件 v2 | 2026-11-25 实现。实施说明写“只做了实验准备”，但 [`diagnose_kv_position_followup.py`](experiments/diagnose_kv_position_followup.py) 针对的是 seed42/43/44 三个已训练完成的 KV-pos 检查点；结果在 `outputs/`，仓库内无法核对 | [实施说明](docs/reference_conditioning_20261125.md) |
+| 前后片 + 病例参考片 KV-pos 联合 | 2026-11-27 实现，**尚未训练**；含仅前后片、KV-pos 重跑两个对照 | [联合实验说明](docs/reference_joint_20261127.md) |
 
 **实验结论（来自开发验证集，不是 test 结果）：**
 
@@ -120,6 +121,7 @@ python predict_spine.py --checkpoint outputs/readme_n0/best.pt \
 | N7 | N0 加 E2 词级 token、E3 每类 CLS、组织锚路由和差分残差 | [`run_dual_text.py`](experiments/run_dual_text.py) 的 `arm_config()`、[`run_dual_text_long.py`](experiments/run_dual_text_long.py) |
 | 病例上下文 A/B/C | A 为三片视觉对照；B 加同病例中部参考片；C 给三片融合权重加相对位置偏置 | [`case_reference.yaml`](configs/v3/case_reference.yaml)、[`run_case_reference.py`](experiments/run_case_reference.py) |
 | 参考图像—掩膜条件 v2 | 行先验 FiLM（P1）、位置键/图像键注意力（KV-pos/KV）、固定参考、受限 GT 课程 | [`configs/v3/reference_conditioning/`](configs/v3/reference_conditioning)、[`run_reference_conditioning.py`](experiments/run_reference_conditioning.py) |
+| KV-pos 联合 | KV-pos（病例参考片）、NB-pos（前后片 i−1/i+1）、JOINT-pos（两个独立分支同时加） | [`configs/v3/reference_joint/`](configs/v3/reference_joint)、[`build_reference_cache.py`](experiments/build_reference_cache.py)、[`summarize_reference_joint.py`](experiments/summarize_reference_joint.py) |
 | 频率双学生 | 学生 1 看原图，学生 2 看原图加 Haar 高频残差；两个 EMA 教师交叉提供伪标签 | [`dual_frequency.yaml`](configs/v3/dual_frequency.yaml) |
 | 其他 v3 对照 | 纯监督、独立双学生、原图交叉伪监督（CPS）、OAR 顺序分支 | [`configs/v3/`](configs/v3) |
 
@@ -229,6 +231,8 @@ pytest            # 在仓库根目录；也可以 python -m pytest tests，或�
 - 环境一：Python 3.10.20、PyTorch 2.0.1、NumPy 1.26，与项目记录的环境一致。
 - 环境二：Python 3.13、PyTorch 2.15、NumPy 2.5。
 
+加入前后片/联合 KV-pos 测试后，同日只在环境二重跑：239 个通过、25 个跳过、0 个失败（新增的 1 个跳过是 CUDA 测试）。
+
 跳过的 24 个里，22 个是因为没有 CUDA，2 个是因为缺少原始 FTP 源码（设置 `FTP_NET_ROOT` 后可以运行）。GPU 上的确定性、缓存和续训检查都没有覆盖到。合成训练只能说明链路、梯度和恢复是正确的，不代表模型性能。
 
 CI 配置在 [`.github/workflows/tests.yml`](.github/workflows/tests.yml)，push 到 main 或提交 PR 时会用 Python 3.10 + PyTorch 2.0.1 CPU 版运行上面的测试。
@@ -244,7 +248,7 @@ CI 配置在 [`.github/workflows/tests.yml`](.github/workflows/tests.yml)，push
 - 文本：[内部文本融合](docs/internal_text_fusion_20261106.md)、[分层文本设计](docs/hierarchical_text_fusion_design_20261108.md)、[文本证据与后续测试](docs/text_fusion_evidence_and_next_tests_20261110.md)、[架构与损失调研](docs/architecture_and_loss_research_20261112.md)
 - 提示教师：[训练期外部提示教师](docs/prompt_context_20261103.md)、[提示修订](docs/prompt_revision_20261104.md)
 - N7 实验协议：[短筛查](experiments/DUAL_TEXT_SCREEN.md)、[200 轮](experiments/DUAL_TEXT_LONG.md)
-- 参考条件 v2：[实施说明](docs/reference_conditioning_20261125.md)
+- 参考条件 v2：[实施说明](docs/reference_conditioning_20261125.md)、[前后片 + 病例参考片联合](docs/reference_joint_20261127.md)
 
 ## 历史 FTP v2
 

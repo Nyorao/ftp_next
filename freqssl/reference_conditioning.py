@@ -150,8 +150,15 @@ class RowWindowAttention(nn.Module):
         flatten = lambda x: x.flatten(2).transpose(1, 2)
         qy, ky = qsi.flatten(1), ksi.flatten(1)
         q = self.query(self.query_norm(flatten(feature))) + position_encoding(qy * w, self.dimension)
-        content = self.key(self.key_norm(flatten(key_image)))
-        k = content * (0. if self.position_only else 1.) + position_encoding(ky * w, self.dimension)
+        if key_image is None:
+            # Position-only keys never read appearance. The original
+            # `content * 0. + PE` path is kept below, bit for bit, for KV-pos.
+            if not self.position_only:
+                raise ValueError("Image keys require a key image")
+            k = position_encoding(ky * w, self.dimension)
+        else:
+            content = self.key(self.key_norm(flatten(key_image)))
+            k = content * (0. if self.position_only else 1.) + position_encoding(ky * w, self.dimension)
         v = self.value(flatten(value_mask))
         result = self.attend(q, k, v, qy, ky, qvalid.flatten(1), kvalid.flatten(1), w, dense)
         residual = self.gate.tanh() * self.output(result.transpose(1, 2).reshape(b, self.dimension, h, w))
@@ -169,20 +176,56 @@ class RowWindowAttention(nn.Module):
         return residual
 
 
+REFERENCE_SOURCES = ("case", "neighbors", "case_neighbors")
+# Offset for the neighbour branch's private initialization stream (see below).
+NEIGHBOR_INIT_OFFSET = 7919
+
+
 class ReferenceContextUNet(ContextUNet):
+    """A's triplet CRF plus SI-windowed reference banks at stride 8/16.
+
+    ``reference_sources`` chooses the banks: ``case`` is the original single
+    case reference (unchanged modules, parameter names and arithmetic);
+    ``neighbors`` is a separate position-key bank built from slices i-1 and
+    i+1; ``case_neighbors`` adds both residuals to the same CRF output.
+    """
     def __init__(self, num_classes, base_channels, max_channels, mode="adaptive",
-                 reference_condition="kv", reference_windows=(2, 1)):
+                 reference_condition="kv", reference_windows=(2, 1), reference_sources="case"):
         super().__init__(num_classes, base_channels, max_channels, mode)
+        if reference_sources not in REFERENCE_SOURCES:
+            raise ValueError("Unknown reference_sources")
+        if reference_sources != "case" and reference_condition != "position":
+            raise ValueError("Neighbour references are implemented for position-only keys")
         self.reference_condition = reference_condition
+        self.reference_sources = reference_sources
+        self.uses_case_reference = reference_sources in ("case", "case_neighbors")
+        self.uses_neighbor_reference = reference_sources in ("neighbors", "case_neighbors")
         self.reference_teacher_path = ""
         self.reference_teacher_sha256 = ""
         channels = [self.widths[k] for k in (3, 4)]
-        with torch.random.fork_rng(devices=[]):
-            self.mask_encoder = None if reference_condition == "row" else MaskEncoder(channels)
-            self.reference_adapters = nn.ModuleList(
-                RowFiLM(c) if reference_condition == "row" else
-                RowWindowAttention(c, w, reference_condition == "position")
-                for c, w in zip(channels, reference_windows))
+        if self.uses_case_reference:
+            with torch.random.fork_rng(devices=[]):
+                self.mask_encoder = None if reference_condition == "row" else MaskEncoder(channels)
+                self.reference_adapters = nn.ModuleList(
+                    RowFiLM(c) if reference_condition == "row" else
+                    RowWindowAttention(c, w, reference_condition == "position")
+                    for c, w in zip(channels, reference_windows))
+        else:
+            self.mask_encoder = None
+            self.reference_adapters = nn.ModuleList()
+        self.neighbor_mask_encoder = None
+        self.neighbor_adapters = nn.ModuleList()
+        if self.uses_neighbor_reference:
+            with torch.random.fork_rng(devices=[]):
+                # The case block above is forked, so the generator here is the
+                # post-backbone state in every arm. Reseeding from one draw of
+                # it gives the neighbour branch identical weights in the
+                # neighbour-only and joint arms, distinct from the case branch.
+                seed = int(torch.randint(0, 2 ** 31 - 1, ()))
+                torch.random.default_generator.manual_seed(seed + NEIGHBOR_INIT_OFFSET)
+                self.neighbor_mask_encoder = MaskEncoder(channels)
+                self.neighbor_adapters = nn.ModuleList(
+                    RowWindowAttention(c, w, position_only=True) for c, w in zip(channels, reference_windows))
 
     def prepare_reference(self, image, probabilities, si, valid, prior=None, encoded=None):
         if image.ndim != 4 or image.shape[1] != 1 or probabilities.shape != (len(image), 20, *image.shape[-2:]):
@@ -214,6 +257,54 @@ class ReferenceContextUNet(ContextUNet):
                      prior=spatial_resize(prior, shape) if prior is not None else None)
                 for key, value, shape in zip(keys, values, shapes)]
 
+    def encode_neighbor_values(self, image, probabilities):
+        """Per-slice neighbour values, [N,1,H,W] + [N,20,H,W] -> stride 8/16."""
+        if self.neighbor_mask_encoder is None:
+            raise ValueError("This model has no neighbour reference branch")
+        if image.ndim != 4 or image.shape[1] != 1 or probabilities.shape != (len(image), 20, *image.shape[-2:]):
+            raise ValueError("Neighbour image/probability shape mismatch")
+        if not (torch.isfinite(image).all() and torch.isfinite(probabilities).all()):
+            raise ValueError("Nonfinite neighbour input")
+        if self.training:
+            return self.neighbor_mask_encoder(image, probabilities)
+        chunks = []
+        for start in range(0, len(image), self.inference_microbatch):
+            im, pr = image[start:start+self.inference_microbatch], probabilities[start:start+self.inference_microbatch]
+            n = len(im)
+            chunks.append([v[:n] for v in self.neighbor_mask_encoder(self._pad(im), self._pad(pr))])
+        return [torch.cat([chunk[k] for chunk in chunks]) for k in range(2)]
+
+    @staticmethod
+    def neighbor_bank(values, si, valid):
+        """Stack the slots of each sample along AP into one key set per sample.
+
+        values: per level [B,S,C,h,w]; si: [B,1,H,W]; valid: [B,S,H,W] with a
+        zero map for a slot that lies outside the volume. All slots share the
+        target affine, hence the same SI map. Slots of one sample share one
+        softmax; different samples never do.
+        """
+        bank = []
+        for value in values:
+            b, s, c, h, w = value.shape
+            if valid.shape != (b, s, *si.shape[-2:]) or si.shape[:2] != (b, 1):
+                raise ValueError("Neighbour bank coordinates/validity mismatch")
+            bank.append(dict(value=value.transpose(1, 2).reshape(b, c, s * h, w),
+                             si=spatial_resize(si, (h, w)).repeat(1, 1, s, 1),
+                             valid=spatial_resize(valid, (h, w)).reshape(b, 1, s * h, w)))
+        return bank
+
+    def prepare_neighbors(self, reference):
+        image, probabilities, valid = (reference["neighbor_image"], reference["neighbor_probabilities"],
+                                       reference["neighbor_valid"])
+        b, s = image.shape[:2]
+        if image.ndim != 4 or probabilities.shape != (b, s, 20, *image.shape[-2:]) or valid.shape != image.shape:
+            raise ValueError("Expected neighbour image [B,S,H,W], probabilities [B,S,20,H,W], validity [B,S,H,W]")
+        if not torch.isfinite(valid).all():
+            raise ValueError("Nonfinite neighbour validity")
+        values = self.encode_neighbor_values(image.reshape(b * s, 1, *image.shape[-2:]),
+                                             probabilities.reshape(b * s, 20, *image.shape[-2:]))
+        return self.neighbor_bank([v.reshape(b, s, *v.shape[1:]) for v in values], reference["si"], valid)
+
     @staticmethod
     def select_bank(bank, indices):
         return [{key: None if value is None else value[indices] for key, value in level.items()} for level in bank]
@@ -223,28 +314,38 @@ class ReferenceContextUNet(ContextUNet):
             value = torch.cat((value, value.new_zeros((self.inference_microbatch-len(value), *value.shape[1:]))))
         return value
 
-    def decode_reference(self, triplets, bank, query_si, query_valid, donor=None, mix=None):
+    def decode_reference(self, triplets, bank, query_si, query_valid, donor=None, mix=None, neighbor_bank=None):
         skips = [triplets[0][:, 1], triplets[1][:, 1]]
         skips.extend(fuse(value) for fuse, value in zip(self.context_fusion, triplets[2:]))
-        if bank is None:
+        if bank is None and neighbor_bank is None:
             return self.decode_features(skips)
         for offset, level in enumerate((3, 4)):
             original = skips[level]
             shape = original.shape[-2:]
             qsi, qvalid = spatial_resize(query_si, shape), spatial_resize(query_valid, shape)
-            def residual(reference, si, valid):
+            def case_residual(reference, si, valid):
                 if self.reference_condition == "row":
                     support = ((reference["valid"] > .999) & (valid > .999)).to(original.dtype)
                     return self.reference_adapters[offset](original, reference["prior"], support)
                 return self.reference_adapters[offset](original, reference["key"], reference["value"],
                     si, reference["si"], valid, reference["valid"])
-            own = residual(bank[offset], qsi, qvalid)
-            if donor is not None and mix is not None and bool(mix.any()):
-                other = {key: None if value is None else value[donor] for key, value in bank[offset].items()}
-                borrowed = residual(other, qsi[donor], qvalid[donor])
-                mask = spatial_resize(mix, shape)
-                own = own * (1 - mask) + borrowed * mask
-            skips[level] = original + own
+            def neighbor_residual(reference, si, valid):
+                return self.neighbor_adapters[offset](original, None, reference["value"],
+                    si, reference["si"], valid, reference["valid"])
+            def routed(residual, level_bank):
+                own = residual(level_bank, qsi, qvalid)
+                if donor is not None and mix is not None and bool(mix.any()):
+                    other = {key: None if value is None else value[donor] for key, value in level_bank.items()}
+                    borrowed = residual(other, qsi[donor], qvalid[donor])
+                    mask = spatial_resize(mix, shape)
+                    own = own * (1 - mask) + borrowed * mask
+                return own
+            value = original
+            if bank is not None:
+                value = value + routed(case_residual, bank[offset])
+            if neighbor_bank is not None:
+                value = value + routed(neighbor_residual, neighbor_bank[offset])
+            skips[level] = value
         return self.decode_features(skips)
 
     def forward_features(self, images, reference=None):
@@ -254,20 +355,24 @@ class ReferenceContextUNet(ContextUNet):
         triplets = [v.reshape(len(images), 3, *v.shape[1:]) for v in encoded]
         if reference is None:
             return self.context_features(triplets)
-        bank = self.prepare_reference(reference["image"], reference["probabilities"],
-            reference["si"], reference["valid"], reference.get("prior"))
+        bank = (self.prepare_reference(reference["image"], reference["probabilities"],
+            reference["si"], reference["valid"], reference.get("prior")) if self.uses_case_reference else None)
+        neighbors = self.prepare_neighbors(reference) if self.uses_neighbor_reference else None
         if not self.training:
             if reference.get('donor') is not None:
                 raise ValueError('CutMix routing is training-only')
+            pad_bank = lambda levels, start, end: None if levels is None else [
+                {k: None if v is None else self._pad(v[start:end]) for k, v in level.items()} for level in levels]
             results = []
             for start in range(0, len(images), self.inference_microbatch):
                 end = min(len(images), start+self.inference_microbatch)
-                local = [{k: None if v is None else self._pad(v[start:end]) for k, v in level.items()} for level in bank]
-                results.append(self.decode_reference([self._pad(v[start:end]) for v in triplets], local,
-                    self._pad(reference['si'][start:end]), self._pad(reference['valid'][start:end]))[:end-start])
+                results.append(self.decode_reference([self._pad(v[start:end]) for v in triplets],
+                    pad_bank(bank, start, end), self._pad(reference['si'][start:end]),
+                    self._pad(reference['valid'][start:end]),
+                    neighbor_bank=pad_bank(neighbors, start, end))[:end-start])
             return torch.cat(results)
         return self.decode_reference(triplets, bank, reference["si"], reference["valid"],
-                                     reference.get("donor"), reference.get("mix"))
+                                     reference.get("donor"), reference.get("mix"), neighbors)
 
     def forward(self, images, reference=None):
         return self.project(self.forward_features(images, reference))

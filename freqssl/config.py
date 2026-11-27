@@ -30,6 +30,7 @@ class ExperimentConfig:
     reference_teacher_sha256: str = ""
     reference_cache: str = ""
     reference_windows: tuple[int, int] = (2, 1)
+    reference_sources: str = "case"
     prompt_source: str = "none"
     prompt_cache: str = ""
     prompt_weight: float = 0.5
@@ -136,6 +137,13 @@ class ExperimentConfig:
                 raise ValueError("Cycle experiment uses prediction-only image-key KV")
         elif self.reference_gt or self.reference_cycle_weight or self.reference_cache or self.reference_teacher:
             raise ValueError("Reference options require an enabled reference condition")
+        if self.reference_sources not in ("case", "neighbors", "case_neighbors"):
+            raise ValueError("reference_sources must be case, neighbors or case_neighbors")
+        if self.reference_sources != "case" and (self.reference_condition != "position" or
+                self.reference_gt or self.reference_cycle_weight):
+            # The neighbour bank is implemented for position-only keys and
+            # prediction-only values; other combinations are not experiments.
+            raise ValueError("Neighbour references require prediction-only position keys")
         if self.internal_text not in ("none", "text", "neutral"):
             raise ValueError("internal_text must be none, text or neutral")
         if type(self.text_adapter_dim) is not int or self.text_adapter_dim < 1:

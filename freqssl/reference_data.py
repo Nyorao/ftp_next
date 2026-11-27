@@ -223,4 +223,30 @@ class ReferenceTrainingDataset(Dataset):
             reference_unlabeled_case=case not in self.labeled_cases)
         if self.cfg.reference_cycle_weight:
             sample['reference_triplet'] = image
+        if getattr(self.cfg, 'reference_sources', 'case') in ('neighbors', 'case_neighbors'):
+            sample.update(self._neighbors(names, target_index, index))
         return sample
+
+    def _neighbors(self, names, target_index, index):
+        """Slices i-1/i+1 with frozen-teacher probabilities, in the target affine.
+
+        A separate geometry call reuses the same per-sample random stream, so
+        the case-reference fields above are unchanged bit for bit. A slot
+        outside the volume is zero with zero validity; it is never replaced by
+        the target or by the other neighbour.
+        """
+        shape = self.base.image_size
+        slots = (target_index - 1, target_index + 1)
+        present = [0 <= j < len(names) for j in slots]
+        images = [self._image(names[j]) if ok else torch.zeros(1, *shape) for j, ok in zip(slots, present)]
+        probabilities = [self.cache.read(names[j]) if ok else torch.zeros(20, *shape) for j, ok in zip(slots, present)]
+        image, _, auxiliary = self.base._geometry(torch.cat(images), None, index,
+                                                  torch.cat(probabilities + [torch.ones(1, *shape)]), 'bilinear')
+        image = torch.cat([(v-v.mean())/v.std(unbiased=False).clamp_min(1e-6) for v in image.split(1)])
+        support = auxiliary[-1:]
+        flags = torch.tensor(present, dtype=torch.float32)[:, None, None]
+        probabilities = auxiliary[:-1].reshape(len(slots), 20, *shape) / support.clamp_min(1e-8)
+        return dict(reference_neighbor_image=image * flags,
+                    reference_neighbor_probabilities=probabilities * flags[:, None],
+                    reference_neighbor_valid=support * flags,
+                    reference_neighbor_present=torch.tensor(present))

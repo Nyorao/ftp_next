@@ -1,0 +1,46 @@
+# Run directories read by experiments/summarize_reference_joint.py.
+# For each arm and seed the candidates are tried in order; the first one with
+# a completed valid_step_6000.json is used, and the report prints which one.
+# KV-pos prefers this study's rerun (same cache as NB/JOINT) and falls back to
+# the 2026-11-25 run. Edit paths here if your outputs live elsewhere.
+# Keep block lists ("- path"): ${...} inside [ ... ] is not valid YAML.
+step: 6000
+seeds: [42, 43, 44]
+output: ${REPO_ROOT}/outputs/reference_joint_20261127/summary
+arms:
+  A:
+    42:
+      - ${REPO_ROOT}/outputs/case_reference_20261112/screen/A
+    43:
+      - ${REPO_ROOT}/outputs/case_reference_followup_20261116/training/seed43/A
+    44:
+      - ${REPO_ROOT}/outputs/case_reference_followup_20261116/training/seed44/A
+  KV-pos:
+    42:
+      - ${REPO_ROOT}/outputs/reference_joint_20261127/training/seed42/KV-pos
+      - ${REPO_ROOT}/outputs/reference_conditioning_20261125/training/seed42/KV-pos
+    43:
+      - ${REPO_ROOT}/outputs/reference_joint_20261127/training/seed43/KV-pos
+      - ${REPO_ROOT}/outputs/reference_conditioning_20261125/training/seed43/KV-pos
+    44:
+      - ${REPO_ROOT}/outputs/reference_joint_20261127/training/seed44/KV-pos
+      - ${REPO_ROOT}/outputs/reference_conditioning_20261125/training/seed44/KV-pos
+  NB-pos:
+    42:
+      - ${REPO_ROOT}/outputs/reference_joint_20261127/training/seed42/NB-pos
+    43:
+      - ${REPO_ROOT}/outputs/reference_joint_20261127/training/seed43/NB-pos
+    44:
+      - ${REPO_ROOT}/outputs/reference_joint_20261127/training/seed44/NB-pos
+  JOINT-pos:
+    42:
+      - ${REPO_ROOT}/outputs/reference_joint_20261127/training/seed42/JOINT-pos
+    43:
+      - ${REPO_ROOT}/outputs/reference_joint_20261127/training/seed43/JOINT-pos
+    44:
+      - ${REPO_ROOT}/outputs/reference_joint_20261127/training/seed44/JOINT-pos
+# Fixed before any result: thresholds in percentage points of case-equal Dice.
+decision:
+  joint_vs_best_single_dice_pp: 0.1
+  joint_vs_a_dice_pp: 0.3
+  min_positive_seeds: 2
