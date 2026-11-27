@@ -6,6 +6,8 @@ from pathlib import Path
 
 import yaml
 
+from .paths import expand
+
 
 METHODS = ("supervised", "mean_teacher", "dual_independent", "dual_cps", "dual_frequency", "dual_ordinal")
 
@@ -263,7 +265,7 @@ def load_config(path):
     values = yaml.safe_load(Path(path).read_text())
     if not isinstance(values, dict):
         raise ValueError("Configuration must be a YAML mapping")
-    return ExperimentConfig(**values).validate()
+    return ExperimentConfig(**expand(values)).validate()
 
 
 def arm_config(cfg, method, output_dir=None, seed=None):

@@ -1,7 +1,7 @@
 # Runnable MT candidate; no full run has been launched.
 # Dense tissue alignment only. Frozen-visual global losses remain probe-only.
 schema_version: 3
-root_path: /data/zhp/dateset_spine copy/spider/slice_png_order
+root_path: ${SPIDER_PNG_ROOT:-/data/zhp/dateset_spine copy/spider/slice_png_order}
 output_dir: outputs/hierarchical_text_dense_run
 method: mean_teacher
 num_classes: 20

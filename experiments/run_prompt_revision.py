@@ -24,7 +24,7 @@ from experiments.run_prompt_context import Process,done,resume_checkpoint
 from experiments.run_slice_context import compact_run,selected_validation,paired_cases,benchmark_checkpoint
 
 DEFAULT_OUTPUT=ROOT/'outputs/spine_prompt_revision_20261104'
-HISTORY=Path('/home/zhp/ftp_next/outputs/spine_prompt_context_20261103')
+HISTORY=ROOT/'outputs/spine_prompt_context_20261103'
 
 
 def save_config(path,cfg):
@@ -233,8 +233,8 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--output',type=Path,default=DEFAULT_OUTPUT)
     p.add_argument('--config',type=Path,default=ROOT/'configs/v3/prompt_context.yaml');p.add_argument('--history',type=Path,default=HISTORY)
     p.add_argument('--freeze-only',action='store_true');p.add_argument('--summarize',action='store_true')
-    p.add_argument('--teacher-python',default='/home/zhp/.conda/envs/medclipseg/bin/python')
-    p.add_argument('--student-python',default='/home/zhp/.conda/envs/mamba/bin/python')
+    p.add_argument('--teacher-python',default=os.environ.get('TEACHER_PYTHON','/home/zhp/.conda/envs/medclipseg/bin/python'))
+    p.add_argument('--student-python',default=os.environ.get('STUDENT_PYTHON','/home/zhp/.conda/envs/mamba/bin/python'))
     p.add_argument('--teacher-gpu',default='0');p.add_argument('--student-gpu',default='1');a=p.parse_args()
     if a.freeze_only:print(freeze(a.output,a.config,a.history),flush=True)
     elif a.summarize:summarize(a.output.resolve(),torch.device('cuda:0'))

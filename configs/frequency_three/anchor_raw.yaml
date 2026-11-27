@@ -1,7 +1,7 @@
 # Prepared only; no automatic launch. Use compare_frequency.py to enforce 3D readiness gates.
-root_path: /data/zhp/dateset_spine copy/spider/slice_png_order
-bert_type: /home/zhp/ftp_net/pretrained_model/BiomedVLP-CXR-BERT-general
-text_emb_path: /home/zhp/ftp_net/class_embedding/spider_txt_encoding_BiomedVLP-CXR-BERT-general.pth
+root_path: ${SPIDER_PNG_ROOT:-/data/zhp/dateset_spine copy/spider/slice_png_order}
+bert_type: ${FTP_NET_ROOT:-/home/zhp/ftp_net}/pretrained_model/BiomedVLP-CXR-BERT-general
+text_emb_path: ${FTP_NET_ROOT:-/home/zhp/ftp_net}/class_embedding/spider_txt_encoding_BiomedVLP-CXR-BERT-general.pth
 output_dir: ./outputs/frequency_three_seed42_run1/anchor_raw
 num_classes: 20
 text_length: 112

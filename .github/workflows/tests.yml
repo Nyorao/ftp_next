@@ -1,0 +1,25 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  cpu:
+    # CPU only: tests marked "CUDA required" are skipped here and must still be
+    # run on a GPU machine before formal experiments.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install dependencies (matches recorded PyTorch 2.0.1)
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch==2.0.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install "numpy<2" Pillow PyYAML scipy SimpleITK "monai<1.4" MedPy matplotlib pytest
+      - name: Run tests
+        run: python -m pytest -q tests

@@ -1,6 +1,6 @@
 # Frozen three-arm prompt screening. Foundation teachers have separate 6000-step fits.
 schema_version: 3
-root_path: /data/zhp/dateset_spine copy/spider/slice_png_order
+root_path: ${SPIDER_PNG_ROOT:-/data/zhp/dateset_spine copy/spider/slice_png_order}
 output_dir: outputs/spine_prompt_context_20261103
 method: mean_teacher
 slice_context: adaptive

@@ -1,6 +1,6 @@
 # Fixed single-seed screening. Shorter schedule than the 30000-step main protocol.
 schema_version: 3
-root_path: /data/zhp/dateset_spine copy/spider/slice_png_order
+root_path: ${SPIDER_PNG_ROOT:-/data/zhp/dateset_spine copy/spider/slice_png_order}
 output_dir: outputs/freqssl_v3_screening
 method: dual_frequency
 num_classes: 20

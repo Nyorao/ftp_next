@@ -1,6 +1,6 @@
 # Matched 6000-step screening; run_slice_context freezes and runs mean/adaptive.
 schema_version: 3
-root_path: /data/zhp/dateset_spine copy/spider/slice_png_order
+root_path: ${SPIDER_PNG_ROOT:-/data/zhp/dateset_spine copy/spider/slice_png_order}
 output_dir: outputs/spine_slice_context
 method: mean_teacher
 num_classes: 20
