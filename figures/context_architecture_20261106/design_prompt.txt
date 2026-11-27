@@ -1,0 +1,33 @@
+Use case: infographic-diagram
+Asset type: a publication-ready architecture figure for a CVPR / NeurIPS / ICLR paper.
+
+1. FRAMING
+Create one exceptionally refined academic method diagram of a three-slice, center-residual ContextUNet trained with Mean Teacher for semi-supervised spine segmentation. Landscape aspect ratio approximately 1.6:1. Communicate the actual architecture accurately, with very readable English labels and generous whitespace. This is an engineering figure, not a poster. Use the design discipline of contemporary DeepMind / OpenAI paper diagrams, without any brand marks.
+
+2. VISUAL STYLE
+Pure white canvas. Flat vector illustration appearance. Crisp thin orthogonal arrows with small arrowheads. Consistent rounded rectangles, restrained line icons, a clean Arial / Helvetica sans-serif typeface. Dark slate text for legibility. No gradients, shadows, texture, 3D, perspective blocks, realistic medical photographs, handwriting, cartoons or decoration. Keep every label short. Use simple schematic sagittal spine icons in the input cards and segmented spine icons in the outputs. Center slice is subtly emphasized. Panel labels are (a), (b), (c), (d). No large overall title.
+
+3. COLOR PALETTE
+Background #FFFFFF. Text #344557. Connector strokes #8293A4. Encoder fills #EAF1F9 and #D9E7F5. Fusion fills #E5F1EB. Decoder fills #EEEAF7. Loss fills #FBF0E0. Teacher fill #EEF2F6. Outline colors are subdued pastel-compatible blue, sage and lavender. All module fills must remain light and desaturated. No saturated red or green, heavy dark modules, or black background.
+
+4. LAYOUT
+Upper half, full width: (a) Three-slice context network.
+At left, three separate flat schematic sagittal image cards, labeled x_(z-1), x_z, x_(z+1), and a short group label "Adjacent sagittal slices". These are three grayscale single-channel slices, not RGB channels. Center x_z is slightly emphasized.
+They enter a single group titled "Shared 2D encoder" with a short subtitle "Tied weights across slices". Inside, five levels descend vertically. Each level shows three small feature maps, representing independently encoded slices using the same encoder parameters. Five exact level labels: "E0 | 224 x 224 | 32", "E1 | 112 x 112 | 64", "E2 | 56 x 56 | 128", "E3 | 28 x 28 | 256", "E4 | 14 x 14 | 256". Neighboring encoder levels connect downwards.
+At the first two levels, only the center-slice feature is routed to the decoder, through small boxes labeled "Center only". At the last three levels, all three slice features enter separate pale sage boxes labeled "CRF2", "CRF3", "CRF4". CRF stands for the center-residual fusion detailed in panel (b).
+At the right of those boxes, show four vertically ascending decoder stages D3, D2, D1, D0. CRF4 is the bottleneck input to D3. CRF3 is the skip input to D3. CRF2 is the skip input to D2. E1 center-only is the skip input to D1. E0 center-only is the skip input to D0. Do not add a fifth decoder stage. D0 goes right into a small box labeled "1 x 1 head", then to an output card labeled "20-class center mask". The decoder group label is "U-Net decoder". No neighbor-slice prediction heads.
+
+Middle/lower left: (b) Center-residual fusion.
+Three feature tokens F-, F0, F+ at left. An upper control path: "Concat" -> "1 x 1 Conv" -> "Softmax". Softmax yields spatial weights labeled w-, w0, w+. A lower content path: the three original features plus weights enter "Weighted sum", producing Fw. This goes to a "Center residual" box, which also receives a center-feature F0 bypass, then yields fused feature F_tilde. A single compact equation under this inset: "F_tilde = F0 + gamma (Fw - F0)". Small badge "gamma initialized to 0". Spatial weights are shared over feature channels; the three fusion scales have independent modules. Do not depict channel attention, self-attention, a transformer, or a sigmoid gate. Gamma is a learnable unconstrained scalar, not a probability.
+
+Middle/lower right: (c) Mean Teacher training.
+Separate inputs "Labeled triplets" and "Unlabeled triplets". Both enter the trainable "Student" through "Strong view"; student CutMix applies only to the unlabeled stream. Unlabeled triplets also enter a lower "EMA teacher" through "Original view". Student and teacher have the same ContextUNet architecture. A dashed arrow goes FROM Student TO EMA teacher, labeled "EMA update". Teacher predictions go to "Confidence mask", then supply detached pseudo-label targets to the student's "Masked CE" loss. The pseudo labels use the same aligned CutMix as the unlabeled student images. Student labeled predictions and center ground truth y_z feed the supervised loss labeled "0.5 CE + 0.5 Dice". Student unlabeled predictions also feed "Masked CE". Teacher badge "Stop gradient". A compact loss identity at the bottom: "L = L_sup + lambda(t) L_u". No backwards gradient arrow into the teacher.
+
+Bottom thin strip, full width: (d) Cached volume inference.
+A small badge "Single EMA network". Four/five short stages: schematic volume -> "Encode once" -> "Feature cache" -> "Fuse + decode" -> "3D segmentation". Cache is inference-only and reuses per-slice feature pyramids across neighboring output triplets.
+
+5. CONNECTIONS
+Primary data arrows are solid muted slate. EMA parameter update is dashed. All arrows must have unambiguous targets and avoid text and boxes. The main network flows left to right with encoder levels downwards and decoder levels upwards. Center-only skip arrows go to D0 and D1. Three-slice fused outputs go to D2, D3 and the bottleneck exactly as described. Do not draw the three input slices as three independent networks; they share all encoder weights. Student and EMA teacher store separate copies during training. The decoder receives two center-only high-resolution skips and two fused low-resolution skips, plus the fused bottleneck. Confidence-mask output is a target for a loss, never an input to the student's network.
+
+6. CONSTRAINTS
+All figure text must be English. No prose paragraphs, long captions, performance claims, dataset counts, result tables or unnecessary training hyperparameters. No frequency decomposition, dual students, ordinal heads, text prompts, foundation model teacher, distillation branch, pretrained encoder or extra modules: these do not belong to the selected current main architecture. Exact five encoder levels, four decoder stages, three fusion modules. Preserve whitespace and readable type. Entire canvas background is pure white. All anatomical visuals are schematic flat line illustrations, never photorealistic images.

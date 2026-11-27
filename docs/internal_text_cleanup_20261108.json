@@ -1,0 +1,26 @@
+{
+  "date": "2026-11-08T23:38:04.126613+08:00",
+  "reason": "User requested deletion of this experiment results before redesign",
+  "deleted": [
+    {
+      "path": "/home/zhp/ftp_next/outputs/internal_text_screen_20261106",
+      "file_bytes": 610323918
+    },
+    {
+      "path": "/home/zhp/ftp_next/outputs/internal_text_validation_20261106",
+      "file_bytes": 155755
+    },
+    {
+      "path": "/home/zhp/ftp_next/outputs/internal_text_cuda_validation_20261107",
+      "file_bytes": 146869
+    }
+  ],
+  "total_file_bytes": 610626542,
+  "retained": [
+    "main implementation and tests",
+    "design and historical notes",
+    "outputs/internal_text_banks_20261106 (fixed text inputs, not training results)",
+    "other baseline and historical experiment directories"
+  ],
+  "status": "deleted"
+}

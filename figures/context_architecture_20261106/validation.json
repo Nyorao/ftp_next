@@ -1,0 +1,17 @@
+{
+  "size": [
+    4000,
+    2640
+  ],
+  "native_vector": true,
+  "embedded_rasters": 0,
+  "svg_filters": 0,
+  "labels_checked": 81,
+  "english_labels": true,
+  "white_background_samples": true,
+  "files": {
+    "context_architecture.pdf": 59364,
+    "context_architecture.png": 671563,
+    "context_architecture.svg": 99289
+  }
+}

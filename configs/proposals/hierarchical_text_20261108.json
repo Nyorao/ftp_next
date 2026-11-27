@@ -1,0 +1,92 @@
+{
+  "status": "6000_step_screen_completed_not_passed",
+  "executable_training_config": false,
+  "date": "2026-11-08",
+  "framework": "single student plus EMA teacher",
+  "visual_backbone": "ContextUNet adaptive CRF at E2/E3/E4",
+  "text_input": "same four fixed tissue prompts at training and inference",
+  "text_encoder": {
+    "checkpoint": "microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224",
+    "revision": "9f341de24bfb00180f1b847274256e9b65a3a32e",
+    "tower": "checkpoint-internal BiomedBERT",
+    "hidden_size": 768,
+    "hidden_layers": 12,
+    "frozen": true,
+    "cache": "12 x 4 x valid_token_length x 768 plus token masks",
+    "old_4x512_bank_sufficient": false
+  },
+  "fusion_sites": [
+    {
+      "after": "CRF4",
+      "before": "D3",
+      "spatial_size": 14,
+      "channels": 256,
+      "text_layers_1_based": [
+        9,
+        10,
+        11,
+        12
+      ]
+    },
+    {
+      "after": "D3",
+      "before": "D2",
+      "spatial_size": 28,
+      "channels": 256,
+      "text_layers_1_based": [
+        5,
+        6,
+        7,
+        8
+      ]
+    },
+    {
+      "after": "D2",
+      "before": "D1",
+      "spatial_size": 56,
+      "channels": 128,
+      "text_layers_1_based": [
+        1,
+        2,
+        3,
+        4
+      ]
+    }
+  ],
+  "mixing": "image-conditioned softmax within the four-layer group, initially uniform",
+  "attention_dim": 64,
+  "text_kv_projections_shared_across_scales": true,
+  "class_pooling": "masked logmeanexp over each prompt's tokens then softmax over four tissues",
+  "auxiliary_alignment": "labeled center masks only; area-pooled four-tissue one-hot targets; soft CE",
+  "auxiliary_loss_weight": 0.1,
+  "auxiliary_loss_weight_status": "fixed prototype weight; no optimality claim",
+  "inference_network": "single EMA teacher with cached hidden text tokens",
+  "test_data_used": false,
+  "implemented": true,
+  "training_started": true,
+  "references": [
+    "https://openaccess.thecvf.com/content/WACV2026/html/Hwang_HiMix__Hierarchical_Visual-Textual_Mixing_Network_for_Lesion_Segmentation_WACV_2026_paper.html",
+    "https://papers.miccai.org/miccai-2024/paper/1674_paper.pdf",
+    "https://papers.miccai.org/miccai-2024/paper/0960_paper.pdf"
+  ],
+  "full_training_started": true,
+  "prototype_date": "2026-11-09",
+  "auxiliary_loss_balance": "equal average of present tissue classes",
+  "prototype_results": [
+    "outputs/hierarchical_text_probe_20261109/results.json",
+    "outputs/hierarchical_text_balanced_probe_20261109/results.json"
+  ],
+  "prototype_global_alignment": {
+    "paired_frozen_visual_tower": true,
+    "cosine_weight": 0.05,
+    "centered_cosine_weight": 0.05,
+    "available_in": "experiments/probe_hierarchical_text.py only; not enabled in full MT engine"
+  },
+  "global_alignment_reliability_established": false,
+  "full_training_completed": true,
+  "full_screen_results": "outputs/hierarchical_text_screen_20261109_r2/results.json",
+  "full_screen_passed": false,
+  "evidence_review": "docs/text_fusion_evidence_and_next_tests_20261110.md",
+  "stage_specific_prompt_content_tested": false,
+  "last_reviewed": "2026-11-10"
+}

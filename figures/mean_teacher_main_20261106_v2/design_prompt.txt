@@ -1,0 +1,51 @@
+Use case: infographic-diagram
+Asset type: main architecture figure for a computer-vision conference paper.
+
+1. FRAMING
+Generate a new publication-quality main method figure for the current three-slice ContextUNet trained with Mean Teacher for semi-supervised spine segmentation. The STUDENT AND EMA TEACHER must be the dominant visual elements. The top Mean Teacher framework occupies approximately two thirds of the figure. Two smaller technical insets beneath it explain the shared architecture and center-residual fusion. Landscape canvas approximately 1.56:1. No overall poster title. The three panel titles are exactly: "(a) Mean Teacher framework", "(b) Three-slice ContextUNet", "(c) Center-residual fusion".
+
+2. VISUAL STYLE
+Contemporary CVPR / NeurIPS / ICLR paper figure. Refined flat vector style, crisp geometric linework, generous whitespace, consistent thin orthogonal arrow paths, modest rounded corners. Pure white canvas and pure white panel backgrounds. Use flat, uniform, desaturated module fills. NO gradients anywhere, NO drop shadows anywhere, NO texture, NO 3D, NO realism, NO cartoons. Dark slate text, clean Arial / Helvetica typography, short English labels. Small anatomical line icons are schematic sagittal spine drawings, never photographs. Symbols should be typeset cleanly. All text must be legible.
+
+3. COLORS
+Canvas and panel backgrounds #FFFFFF. Text #344557. Arrows #7F90A0. Encoder modules pale blue #EAF1F9. Center slice emphasis #D6E5F3. Fusion modules soft mint #E7F2EC. Decoder modules pale lavender #EEEAF7. Loss modules pale sand #FCF1E2. Teacher container outline soft gray-blue #B9C8D5. No saturated red/green, dark module fills or heavy black outlines.
+
+4. LAYOUT AND EXACT GRAPH
+
+Panel (a), dominant top section:
+At left, two groups each showing three small flat sagittal slice cards, the middle card subtly highlighted. Upper group "Labeled triplets" with symbol x_l. Lower group "Unlabeled triplets" with symbol x_u.
+Upper labeled input -> "Strong view" -> STUDENT.
+Lower unlabeled input splits: one branch -> "Strong view / CutMix M" -> STUDENT; the other branch -> "Original view" -> EMA TEACHER. M denotes the same CutMix mask used for targets. CutMix only applies to the unlabeled stream.
+The student is a large horizontal container centered in the upper row, title "Student" with f_theta and a small "Trainable" badge. Inside are three boxes: "Shared 2D encoder" -> "Multi-scale CRF" -> "Decoder + head". Add a thin center-only high-resolution skip bypass from encoder to decoder, labeled "Center skips". The internal design is expanded in panel (b); the fusion module is expanded in panel (c).
+The EMA teacher is a second large horizontal container directly beneath the student, SAME WIDTH AND SAME INTERNAL ARCHITECTURE: "Shared 2D encoder" -> "Multi-scale CRF" -> "Decoder + head", with the same center-skip bypass. Title "EMA teacher" with f_theta_bar and a "Stop gradient" badge. The student and teacher are separate parameter copies. Do not connect their encoders as shared weights.
+A dashed parameter-update arrow goes DOWN from Student to EMA teacher, labeled "EMA update". It must not point from teacher to student. A small symbol theta_bar <- EMA(theta) is optional.
+To the right of Student, split predictions into p_l^s and p_u^s. Labeled prediction p_l^s and a separate center-GT token y_l feed a sand-colored "Supervised loss" box with short secondary label "0.5 CE + 0.5 Dice". Unlabeled student prediction p_u^s feeds a second sand box "Unsupervised loss" with secondary label "Masked CE".
+To the right of EMA teacher, its probability prediction p_u^t goes RIGHT into "Target CutMix M", then UP into "Confidence filter", then UP as detached pseudo-label targets y_hat_u into the student's Unsupervised loss. This direction and ordering match the implementation. M is shared with the student unlabeled-view CutMix. Pseudo labels are targets to the loss, NOT inputs to the student network. Never draw a gradient arrow into the teacher.
+At the bottom of panel (a) include one short equation "L = L_sup + lambda(t) L_u". Small badges "M: shared CutMix mask" and "Inference: teacher only". Do not add a fourth inference panel.
+
+Panel (b), lower left, approximately 62% of lower width:
+Title "Three-slice ContextUNet". Small tag "Student & teacher" emphasizes the architecture applies to both separate networks.
+Three single-channel sagittal slice tokens x_(z-1), x_z, x_(z+1) -> "Shared encoder". This is three independent encodings with tied encoder weights within a network, not RGB channel fusion.
+Show exactly five encoder levels E0, E1, E2, E3, E4 in a vertical feature pyramid, with resolutions 224 x 224, 112 x 112, 56 x 56, 28 x 28, 14 x 14. Three small maps per level signify the three separately encoded slices. Down arrows connect levels.
+E0 center feature only -> "Center only" -> decoder D0.
+E1 center feature only -> "Center only" -> decoder D1.
+E2 three-slice features -> "CRF2" -> decoder D2 skip.
+E3 three-slice features -> "CRF3" -> decoder D3 skip.
+E4 three-slice features -> "CRF4" -> bottleneck input of D3.
+Exactly FOUR decoder blocks, ascending D3 -> D2 -> D1 -> D0. D0 -> "1 x 1 head" -> schematic "20-class center mask". Do not invent a fifth decoder stage. High-resolution center skips and low-resolution fused skips must be distinguishable.
+
+Panel (c), lower right, approximately 36% of lower width:
+Title "Center-residual fusion", small tag "CRF_k".
+Three original feature tokens F-, F0, F+ ALL connect to a common feature bus. The bus branches to BOTH the control path and the content path.
+Control path: "Concat" -> "1 x 1 Conv" -> "Softmax" -> spatial weights w-, w0, w+ -> "Weighted sum".
+Content path: all three original features -> "Weighted sum". Its output Fw -> "Center residual" -> fused feature F_tilde.
+A separate F0 bypass enters "Center residual". Do not route Softmax into this F0 bypass. Do not leave F0 or F+ disconnected from Concat.
+One compact equation below: "F_tilde = F0 + gamma (Fw - F0)". Small badge "gamma_0 = 0". Gamma is an unconstrained learnable scalar, not a sigmoid probability. Weights are per-pixel, shared over channels. Each of the three scales has its own fusion parameters.
+
+5. CONNECTIONS
+Use solid muted arrows for image/feature/prediction/target data. Use a dashed muted arrow solely for the Student -> EMA teacher parameter update. Arrows must avoid labels and module interiors. Node junctions should be deliberate; no accidental mergers or crossing ambiguities. Both input branches entering the student share a network. Both networks show identical internal architecture and distinct parameter copies. The hierarchy must immediately communicate a Mean Teacher framework before the viewer notices the small network details.
+
+6. CONSTRAINTS
+All English; short module names, no descriptive paragraphs. Accurate five encoder levels, four decoder stages, three deep fusion modules. No extra teachers or dual students. No frequency decomposition, prompt teacher, ordinal head, foundation model, text branch, pretraining or new loss terms. No performance claims, dataset statistics or experiment tables. Schematic anatomy only. Absolutely flat solid fills, pure white background, no shadows or gradients. Visual priority: Student / EMA teacher first, supervision second, network and fusion details third.
+
+REFERENCE IMAGE ROLE: The supplied image is the verified layout and scientific-graph reference for this new main figure. Preserve its student/teacher-first hierarchy, complete node connectivity, English labels, module count, short equations and panel proportions. Refine the graphic design and typography only within the requested pure-white, completely flat-vector style. Keep the shared CutMix M labels and student-to-teacher EMA direction exact. Do not add shadows, gradients, decoration or modules. All three F inputs must feed Concat and Weighted sum. Preserve both main network copies and both lower insets.

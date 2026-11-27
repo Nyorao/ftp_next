@@ -1,0 +1,11 @@
+# Tested with the existing /home/zhp/.conda/envs/mamba environment (PyTorch 2.0.1).
+torch>=2.0
+numpy
+Pillow
+PyYAML
+monai
+scipy
+transformers
+SimpleITK
+# Used to cross-check 3D metrics in tests against the original FTP evaluator.
+MedPy

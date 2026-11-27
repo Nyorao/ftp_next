@@ -1,0 +1,32 @@
+# Visual networks are initialized from scratch. Text assets stay frozen/local.
+root_path: /data/zhp/dateset_spine copy/spider/slice_png_order
+bert_type: /home/zhp/ftp_net/pretrained_model/BiomedVLP-CXR-BERT-general
+text_emb_path: /home/zhp/ftp_net/class_embedding/spider_txt_encoding_BiomedVLP-CXR-BERT-general.pth
+output_dir: ./outputs/ftp_mt
+num_classes: 20
+text_length: 112
+image_size: 224
+base_channels: 32
+use_apgm: true
+use_psgm: true
+use_frequency: true
+batch_size: 12
+labeled_bs: 6
+labelnum: 1496
+max_samples: 3732
+num_workers: 4
+max_epochs: 200
+max_iterations: 90000
+base_lr: 0.0001
+weight_decay: 0.05
+ema_decay: 0.99
+consistency_weight: 1.0
+consistency_rampup_epochs: 40
+student_noise_std: 0.10
+teacher_noise_std: 0.05
+student_gain_std: 0.10
+eval_interval: 10
+eval_branch: lf
+seed: 42
+deterministic: true
+cpu_threads: 4

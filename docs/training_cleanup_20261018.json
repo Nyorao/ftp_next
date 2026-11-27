@@ -1,0 +1,36 @@
+{
+  "requested_by_user": true,
+  "removed": [
+    {
+      "path": "/home/zhp/ftp_next/outputs/dual_pilot_20261015_seed42",
+      "bytes": 2483288235
+    },
+    {
+      "path": "/home/zhp/ftp_next/outputs/dual_pilot_v2_20261015_seed42",
+      "bytes": 2483297635
+    },
+    {
+      "path": "/home/zhp/ftp_next/outputs/dual_probe_20261015",
+      "bytes": 104337
+    },
+    {
+      "path": "/home/zhp/ftp_next/outputs/dual_volume_audit_20261016",
+      "bytes": 163827
+    },
+    {
+      "path": "/home/zhp/ftp_next/outputs/dual_volume_eval_20261016",
+      "bytes": 231622063
+    },
+    {
+      "path": "/home/zhp/ftp_next/docs/dual_student_3d_evaluation_20261016.md"
+    },
+    {
+      "path": "/home/zhp/ftp_next/docs/dual_student_run_status.md"
+    }
+  ],
+  "preserved_dataset_metadata": [
+    "data/spider_geometry_trace.json",
+    "data/spider_geometry_audit.json"
+  ],
+  "original_ftp_and_dataset_modified": false
+}

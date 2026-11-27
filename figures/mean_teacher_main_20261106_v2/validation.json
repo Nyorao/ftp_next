@@ -1,0 +1,23 @@
+{
+  "revision": 2,
+  "primary_subject": "Student and EMA teacher",
+  "size": [
+    4200,
+    2700
+  ],
+  "native_vector": true,
+  "embedded_rasters": 0,
+  "gradients_and_filters": 0,
+  "matching_network_copies": true,
+  "encoder_levels": 5,
+  "decoder_stages": 4,
+  "fusion_scales": 3,
+  "labels_checked": 92,
+  "english_labels": true,
+  "white_background_samples": true,
+  "files": {
+    "mean_teacher_main_v2.pdf": 69315,
+    "mean_teacher_main_v2.png": 754723,
+    "mean_teacher_main_v2.svg": 138052
+  }
+}
