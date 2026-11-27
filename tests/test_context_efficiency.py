@@ -1,4 +1,5 @@
 """Equivalence, bounded redundant work, and trainability of the narrower model."""
+from pathlib import Path
 import unittest
 from dataclasses import replace
 
@@ -57,8 +58,8 @@ class EfficiencyTests(unittest.TestCase):
         self.check_cache('cuda:0')
 
     def test_narrow_pair_changes_only_capacity_and_updates_teacher(self):
-        cfg = load_config('configs/v3/context_efficiency_width24.yaml')
-        ref = load_config('configs/v3/context_efficiency_reference.yaml')
+        cfg = load_config(Path(__file__).resolve().parents[1] / 'configs/v3/context_efficiency_width24.yaml')
+        ref = load_config(Path(__file__).resolve().parents[1] / 'configs/v3/context_efficiency_reference.yaml')
         differences = {k for k,v in cfg.to_dict().items() if v != ref.to_dict()[k]}
         self.assertEqual(differences,{'base_channels','max_channels','output_dir'})
         seed_everything(cfg)

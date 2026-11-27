@@ -219,10 +219,10 @@ flowchart LR
 ## 测试
 
 ```bash
-python -m pytest tests
+pytest            # 在仓库根目录；也可以 python -m pytest tests，或在任意目录 pytest /path/to/ftp_next/tests
 ```
 
-测试使用合成数据，不需要 SPIDER 数据。请用 pytest 运行：30 个测试文件中只有 13 个是 `unittest.TestCase`，`unittest discover` 会漏掉其余文件。
+测试使用合成数据，不需要 SPIDER 数据。请用 pytest 运行：31 个测试文件中只有 14 个是 `unittest.TestCase`，`unittest discover` 会漏掉其余文件。根目录的 `pytest.ini` 和 `conftest.py` 负责把仓库根目录加入导入路径；缺了它们时，直接运行 `pytest` 会让每个测试文件都报 `ModuleNotFoundError: freqssl`。
 
 2026-11-27 在无 GPU 的机器上用两套环境各跑了一遍，结果相同：228 个通过、24 个跳过、0 个失败。
 
