@@ -75,7 +75,7 @@ KV-pos 训练时仍对参考图跑一次共享编码器（K 内容乘 0 也要�
 服务器上需要（不在 git 里）：`data/spider_image_geometry_manifest.json`；三个种子的 A 目录 `outputs/case_reference_20261112/screen/A/`、`outputs/case_reference_followup_20261116/training/seed43/A/`、`.../seed44/A/`（至少 `last.pt`、`split.json`、`config.json`、`result.json`、`valid_step_6000.json`）；若要和旧 KV-pos 对照，再加 `outputs/reference_conditioning_20261125/training/seed*/KV-pos/` 下同样几个文件。路径都相对仓库根目录，数据根目录用 `SPIDER_PNG_ROOT` 指定。
 
 ```sh
-git fetch origin && git checkout claude/project-thread-tmkasx && git pull
+git fetch origin && git checkout claud_research && git pull   # Claude 的改动都在这个分支
 export SPIDER_PNG_ROOT=/你的/slice_png_order      # 与默认路径相同则不用设
 
 # 0. 测试（GPU 机器上跑，CUDA 测试会自动执行）
